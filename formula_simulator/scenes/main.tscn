@@ -1,0 +1,108 @@
+[gd_scene load_steps=11 format=3]
+
+[sub_resource type="Environment" id="Environment_main"]
+background_mode = 1
+background_color = Color(0.42, 0.62, 0.82, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.72, 0.78, 0.88, 1)
+ambient_light_energy = 0.65
+
+[sub_resource type="StandardMaterial3D" id="Material_ground"]
+albedo_color = Color(0.18, 0.22, 0.2, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="Mesh_ground"]
+material = SubResource("Material_ground")
+size = Vector3(24, 0.2, 36)
+
+[sub_resource type="BoxShape3D" id="Shape_ground"]
+size = Vector3(24, 0.2, 36)
+
+[sub_resource type="StandardMaterial3D" id="Material_body"]
+albedo_color = Color(0.82, 0.08, 0.06, 1)
+metallic = 0.15
+roughness = 0.35
+
+[sub_resource type="BoxMesh" id="Mesh_body"]
+material = SubResource("Material_body")
+size = Vector3(1.5, 0.45, 3.5)
+
+[sub_resource type="BoxMesh" id="Mesh_nose"]
+material = SubResource("Material_body")
+size = Vector3(0.55, 0.25, 1.5)
+
+[sub_resource type="StandardMaterial3D" id="Material_wheel"]
+albedo_color = Color(0.025, 0.025, 0.03, 1)
+roughness = 0.8
+
+[sub_resource type="CylinderMesh" id="Mesh_wheel"]
+material = SubResource("Material_wheel")
+top_radius = 0.42
+bottom_radius = 0.42
+height = 0.32
+radial_segments = 24
+
+[sub_resource type="StandardMaterial3D" id="Material_line"]
+albedo_color = Color(0.92, 0.92, 0.88, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_line"]
+material = SubResource("Material_line")
+size = Vector3(0.15, 0.012, 30)
+
+[node name="Main" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_main")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-52, -28, 0)
+light_energy = 1.15
+shadow_enabled = true
+
+[node name="Ground" type="StaticBody3D" parent="."]
+position = Vector3(0, -0.1, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Ground"]
+mesh = SubResource("Mesh_ground")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ground"]
+shape = SubResource("Shape_ground")
+
+[node name="CenterLine" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.012, 0)
+mesh = SubResource("Mesh_line")
+
+[node name="FormulaCarMockup" type="Node3D" parent="."]
+
+[node name="Body" type="MeshInstance3D" parent="FormulaCarMockup"]
+position = Vector3(0, 0.72, 0)
+mesh = SubResource("Mesh_body")
+
+[node name="Nose" type="MeshInstance3D" parent="FormulaCarMockup"]
+position = Vector3(0, 0.58, -2.25)
+mesh = SubResource("Mesh_nose")
+
+[node name="FrontLeftWheel" type="MeshInstance3D" parent="FormulaCarMockup"]
+position = Vector3(-1.02, 0.45, -1.35)
+rotation_degrees = Vector3(0, 0, 90)
+mesh = SubResource("Mesh_wheel")
+
+[node name="FrontRightWheel" type="MeshInstance3D" parent="FormulaCarMockup"]
+position = Vector3(1.02, 0.45, -1.35)
+rotation_degrees = Vector3(0, 0, 90)
+mesh = SubResource("Mesh_wheel")
+
+[node name="RearLeftWheel" type="MeshInstance3D" parent="FormulaCarMockup"]
+position = Vector3(-1.02, 0.45, 1.25)
+rotation_degrees = Vector3(0, 0, 90)
+mesh = SubResource("Mesh_wheel")
+
+[node name="RearRightWheel" type="MeshInstance3D" parent="FormulaCarMockup"]
+position = Vector3(1.02, 0.45, 1.25)
+rotation_degrees = Vector3(0, 0, 90)
+mesh = SubResource("Mesh_wheel")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+position = Vector3(8, 5.5, 9)
+rotation_degrees = Vector3(-20, 40, 0)
+current = true
