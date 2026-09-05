@@ -1,4 +1,7 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://scripts/input/keyboard_input.gd" id="1_input"]
+[ext_resource type="Script" path="res://scripts/vehicle/vehicle_prototype.gd" id="2_vehicle"]
 
 [sub_resource type="Environment" id="Environment_main"]
 background_mode = 1
@@ -51,6 +54,9 @@ size = Vector3(0.15, 0.012, 30)
 
 [node name="Main" type="Node3D"]
 
+[node name="KeyboardInput" type="Node" parent="."]
+script = ExtResource("1_input")
+
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_main")
 
@@ -73,6 +79,8 @@ position = Vector3(0, 0.012, 0)
 mesh = SubResource("Mesh_line")
 
 [node name="FormulaCarMockup" type="Node3D" parent="."]
+script = ExtResource("2_vehicle")
+input_path = NodePath("../KeyboardInput")
 
 [node name="Body" type="MeshInstance3D" parent="FormulaCarMockup"]
 position = Vector3(0, 0.72, 0)
@@ -102,7 +110,7 @@ position = Vector3(1.02, 0.45, 1.25)
 rotation_degrees = Vector3(0, 0, 90)
 mesh = SubResource("Mesh_wheel")
 
-[node name="Camera3D" type="Camera3D" parent="."]
+[node name="Camera3D" type="Camera3D" parent="FormulaCarMockup"]
 position = Vector3(8, 5.5, 9)
 rotation_degrees = Vector3(-20, 40, 0)
 current = true
