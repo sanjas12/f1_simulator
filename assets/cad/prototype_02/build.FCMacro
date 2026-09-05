@@ -1,0 +1,132 @@
+"""Run in FreeCAD using Macro > Macros, or with its bundled Python."""
+import os
+import json
+import FreeCAD as App
+import Part
+
+OUT = r'D:\My_work\f1_simulator\assets\cad\prototype_02'
+# Millimetres. X points from nose to tail, Y across the car, Z upwards.
+LENGTH = 4500.0
+WIDTH = 1800.0
+HEIGHT = 950.0
+doc = App.newDocument('FormulaPrototype02')
+parts = []
+colors = {}
+blue = (0.12, 0.32, 0.65)
+dark = (0.08, 0.09, 0.12)
+
+def add(name, shape, color=blue):
+    obj = doc.addObject('PartDesign::Feature', name)
+    obj.Label = name.replace('_', ' ')
+    obj.Shape = shape
+    parts.append(obj)
+    colors[name] = color
+    return obj
+
+def box(name, x, y, z, a, b, c, color=blue):
+    return add(name, Part.makeBox(a, b, c, App.Vector(x, y, z)), color)
+
+def loft_shape(sections):
+    # Each section describes a rectangular cross section; the loft joins them.
+    wires = []
+    for x, half_width, bottom, top in sections:
+        points = [App.Vector(x, -half_width, bottom), App.Vector(x, half_width, bottom),
+                  App.Vector(x, half_width, top), App.Vector(x, -half_width, top)]
+        wires.append(Part.makePolygon(points + [points[0]]))
+    return Part.makeLoft(wires, True, True)
+
+def rod(name, a, b, radius=16):
+    direction = App.Vector(*b) - App.Vector(*a)
+    return add(name, Part.makeCylinder(radius, direction.Length, App.Vector(*a), direction), dark)
+
+params = doc.addObject('Spreadsheet::Sheet', 'Dimensions')
+for row, (label, value) in enumerate([('Length mm', LENGTH), ('Width mm', WIDTH),
+        ('Height mm', HEIGHT), ('Wheelbase mm (assumed)', 2750),
+        ('Wheel diameter mm (assumed)', 620)], 1):
+    params.set('A' + str(row), label)
+    params.set('B' + str(row), str(value))
+params.setColumnWidth('A', 240)
+
+box('Floor', 350, -650, 80, 3850, 1300, 35, dark)
+add('Nose', loft_shape([(160, 75, 200, 260), (800, 125, 230, 360),
+                       (1450, 240, 190, 500), (1800, 285, 160, 570)]))
+shell = loft_shape([(1450, 240, 140, 500), (1850, 310, 140, 610),
+                    (2450, 310, 140, 620), (2800, 240, 140, 520)])
+# The cockpit is a real recess, not a black patch on the outside.
+opening = Part.makeBox(630, 410, 650, App.Vector(1900, -205, 280))
+add('Monocoque_with_cockpit', shell.cut(opening))
+box('Seat', 2290, -160, 285, 90, 320, 250, dark)
+for side, sign in [('Left', 1), ('Right', -1)]:
+    pod = loft_shape([(1950, 180, 135, 410), (2250, 210, 135, 500),
+                      (2850, 180, 135, 440), (3400, 80, 135, 260)])
+    pod.translate(App.Vector(0, sign * 430, 0))
+    add(side + '_Sidepod', pod)
+add('Engine_cover', loft_shape([(2520, 180, 160, 820), (2750, 220, 150, 730),
+                               (3250, 170, 140, 540), (3850, 90, 130, 290)]))
+rod('Roll_hoop_left', (2490, -180, 560), (2520, -120, 900), 28)
+rod('Roll_hoop_right', (2490, 180, 560), (2520, 120, 900), 28)
+rod('Roll_hoop_top', (2520, -120, 900), (2520, 120, 900), 28)
+
+for axle, x, tire_width in [('Front', 850, 250), ('Rear', 3600, 320)]:
+    for side, sign in [('Left', 1), ('Right', -1)]:
+        y = sign * (WIDTH / 2 - tire_width / 2)
+        origin = App.Vector(x, y - tire_width / 2, 310)
+        axis = App.Vector(0, 1, 0)
+        tire = Part.makeCylinder(310, tire_width, origin, axis).cut(
+            Part.makeCylinder(175, tire_width, origin, axis))
+        add(axle + '_' + side + '_Tire', tire, (0.035, 0.035, 0.04))
+        add(axle + '_' + side + '_Rim', Part.makeCylinder(174, tire_width - 12,
+            origin + App.Vector(0, 6, 0), axis), (0.55, 0.58, 0.63))
+        for level, z in [('Upper', 360), ('Lower', 200)]:
+            for end, dx in [('A', -220), ('B', 220)]:
+                rod(axle + '_' + side + '_' + level + '_' + end,
+                    (x + dx, sign * 210, z), (x, y, 310 if z == 360 else 220))
+
+# Wings are simplified solid elements, with no aerodynamic claim.
+box('Front_wing_main', 0, -900, 135, 320, 1800, 35, dark)
+box('Front_wing_flap', 220, -870, 190, 180, 1740, 30, blue)
+for side, y in [('Left', 880), ('Right', -900)]:
+    box('Front_endplate_' + side, 0, y, 100, 420, 20, 180)
+for side, y in [('Left', 560), ('Right', -580)]:
+    box('Rear_endplate_' + side, 4100, y, 590, 400, 20, HEIGHT - 590)
+box('Rear_wing_main', 4100, -560, 865, 400, 1120, 40, dark)
+box('Rear_wing_flap', 4290, -560, 925, 210, 1120, 25)
+for y in [-170, 150]:
+    box('Rear_wing_support_' + str(y).replace('-', 'm'), 4160, y, 115, 55, 20, 750, dark)
+doc.recompute()
+report = {'parts': len(parts), 'invalid': [], 'empty': [], 'dimensions_mm': {}}
+for obj in parts:
+    if not obj.Shape.isValid(): report['invalid'].append(obj.Name)
+    if obj.Shape.Volume <= 0: report['empty'].append(obj.Name)
+bounds = Part.makeCompound([obj.Shape for obj in parts]).BoundBox
+report['dimensions_mm'] = dict(length=bounds.XLength, width=bounds.YLength, height=bounds.ZMax)
+assert not report['invalid'] and not report['empty'], report
+assert abs(bounds.XLength - LENGTH) < 0.01 and abs(bounds.YLength - WIDTH) < 0.01
+assert abs(bounds.ZMax - HEIGHT) < 0.01
+if App.GuiUp:
+    import FreeCADGui as Gui
+    for obj in parts:
+        obj.ViewObject.ShapeColor = colors[obj.Name]
+        obj.ViewObject.LineColor = (0.12, 0.12, 0.15)
+    Gui.activeDocument().activeView().viewAxonometric()
+    Gui.activeDocument().activeView().fitAll()
+doc.recompute()
+target = os.path.join(OUT, 'Formula_Prototype_02.FCStd')
+try:
+    doc.saveAs(target)
+except OSError:
+    # Some Windows installations fail the final rename after writing a valid ZIP.
+    import glob
+    import zipfile
+    import shutil
+    pending = max(glob.glob(target + '.*'), key=os.path.getmtime)
+    with zipfile.ZipFile(pending) as archive:
+        assert archive.testzip() is None
+        assert 'Document.xml' in archive.namelist()
+    shutil.copyfile(pending, target)
+Part.export(parts, os.path.join(OUT, 'Formula_Prototype_02.step'))
+with open(os.path.join(OUT, 'validation.json'), 'w', encoding='utf-8') as stream:
+    json.dump(report, stream, indent=2)
+if App.GuiUp:
+    Gui.activeDocument().activeView().saveImage(os.path.join(OUT, 'preview.png'), 1500, 1000, 'White')
+print(json.dumps(report))
