@@ -1,7 +1,9 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/input/keyboard_input.gd" id="1_input"]
 [ext_resource type="Script" path="res://scripts/vehicle/vehicle_prototype.gd" id="2_vehicle"]
+
+[ext_resource type="PackedScene" path="res://assets/vehicles/prototype_02.gltf" id="3_cad"]
 
 [sub_resource type="Environment" id="Environment_main"]
 background_mode = 1
@@ -20,30 +22,6 @@ size = Vector3(24, 0.2, 36)
 
 [sub_resource type="BoxShape3D" id="Shape_ground"]
 size = Vector3(24, 0.2, 36)
-
-[sub_resource type="StandardMaterial3D" id="Material_body"]
-albedo_color = Color(0.82, 0.08, 0.06, 1)
-metallic = 0.15
-roughness = 0.35
-
-[sub_resource type="BoxMesh" id="Mesh_body"]
-material = SubResource("Material_body")
-size = Vector3(1.5, 0.45, 3.5)
-
-[sub_resource type="BoxMesh" id="Mesh_nose"]
-material = SubResource("Material_body")
-size = Vector3(0.55, 0.25, 1.5)
-
-[sub_resource type="StandardMaterial3D" id="Material_wheel"]
-albedo_color = Color(0.025, 0.025, 0.03, 1)
-roughness = 0.8
-
-[sub_resource type="CylinderMesh" id="Mesh_wheel"]
-material = SubResource("Material_wheel")
-top_radius = 0.42
-bottom_radius = 0.42
-height = 0.32
-radial_segments = 24
 
 [sub_resource type="StandardMaterial3D" id="Material_line"]
 albedo_color = Color(0.92, 0.92, 0.88, 1)
@@ -82,35 +60,9 @@ mesh = SubResource("Mesh_line")
 script = ExtResource("2_vehicle")
 input_path = NodePath("../KeyboardInput")
 
-[node name="Body" type="MeshInstance3D" parent="FormulaCarMockup"]
-position = Vector3(0, 0.72, 0)
-mesh = SubResource("Mesh_body")
-
-[node name="Nose" type="MeshInstance3D" parent="FormulaCarMockup"]
-position = Vector3(0, 0.58, -2.25)
-mesh = SubResource("Mesh_nose")
-
-[node name="FrontLeftWheel" type="MeshInstance3D" parent="FormulaCarMockup"]
-position = Vector3(-1.02, 0.45, -1.35)
-rotation_degrees = Vector3(0, 0, 90)
-mesh = SubResource("Mesh_wheel")
-
-[node name="FrontRightWheel" type="MeshInstance3D" parent="FormulaCarMockup"]
-position = Vector3(1.02, 0.45, -1.35)
-rotation_degrees = Vector3(0, 0, 90)
-mesh = SubResource("Mesh_wheel")
-
-[node name="RearLeftWheel" type="MeshInstance3D" parent="FormulaCarMockup"]
-position = Vector3(-1.02, 0.45, 1.25)
-rotation_degrees = Vector3(0, 0, 90)
-mesh = SubResource("Mesh_wheel")
-
-[node name="RearRightWheel" type="MeshInstance3D" parent="FormulaCarMockup"]
-position = Vector3(1.02, 0.45, 1.25)
-rotation_degrees = Vector3(0, 0, 90)
-mesh = SubResource("Mesh_wheel")
+[node name="Visual" parent="FormulaCarMockup" instance=ExtResource("3_cad")]
 
 [node name="Camera3D" type="Camera3D" parent="FormulaCarMockup"]
-position = Vector3(8, 5.5, 9)
+position = Vector3(4, 2.8, 5)
 rotation_degrees = Vector3(-20, 40, 0)
 current = true
